@@ -27,6 +27,7 @@ def gen(camera):
 
 @app.get('/video_feed')
 def video_feed():
+    print('inside feed')
     print(gen(VideoCamera()))
     return StreamingResponse(gen(VideoCamera()),media_type='multipart/x-mixed-replace; boundary=frame')
 

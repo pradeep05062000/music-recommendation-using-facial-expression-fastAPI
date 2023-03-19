@@ -20,78 +20,19 @@ global last_frame1
 
 last_frame1 = np.zeros((480, 640, 3), dtype=np.uint8)
 
-global cap1 
+# global cap1 
 show_text=[0]
-
-
-''' Class for calculating FPS while streaming. Used this to check performance of using another thread for video streaming '''
-class FPS:
-	def __init__(self):
-		# store the start time, end time, and total number of frames
-		# that were examined between the start and end intervals
-		self._start = None
-		self._end = None
-		self._numFrames = 0
-	def start(self):
-		# start the timer
-		self._start = datetime.datetime.now()
-		return self
-	def stop(self):
-		# stop the timer
-		self._end = datetime.datetime.now()
-	def update(self):
-		# increment the total number of frames examined during the
-		# start and end intervals
-		self._numFrames += 1
-	def elapsed(self):
-		# return the total number of seconds between the start and
-		# end interval
-		return (self._end - self._start).total_seconds()
-	def fps(self):
-		# compute the (approximate) frames per second
-		return self._numFrames / self.elapsed()
-
-
-''' Class for using another thread for video streaming to boost performance '''
-class WebcamVideoStream:
-    	
-		def __init__(self, src=0):
-			# self.stream = cv2.VideoCapture(src,cv2.CAP_DSHOW)
-			self.stream = cv2.VideoCapture(src)
-			(self.grabbed, self.frame) = self.stream.read()
-			self.stopped = False
-
-		def start(self):
-				# start the thread to read frames from the video stream
-			Thread(target=self.update, args=()).start()
-			return self
-			
-		def update(self):
-			# keep looping infinitely until the thread is stopped
-			while True:
-				# if the thread indicator variable is set, stop the thread
-				if self.stopped:
-					return
-				# otherwise, read the next frame from the stream
-				(self.grabbed, self.frame) = self.stream.read()
-
-		def read(self):
-			# return the frame most recently read
-			return self.frame
-		def stop(self):
-			# indicate that the thread should be stopped
-			self.stopped = True
+cap1 = cv2.VideoCapture(0)
 
 ''' Class for reading video stream, generating prediction and recommendations '''
-class VideoCamera(object):
-	
+class VideoCamera():
+
 	def get_frame(self):
 		try:
 			global cap1
 			global df1
 			global jpeg
 			# cap1 = WebcamVideoStream(src=0).start()
-			cap1 = cv2.VideoCapture(0)
 			_,image = cap1.read()
 			image=cv2.resize(image,(600,500))
 			gray=cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
@@ -99,12 +40,12 @@ class VideoCamera(object):
 			df1 = music_rec('nutral')
 			for (x,y,w,h) in face_rects:
 				result = DeepFace.analyze(image,actions = ['emotion'],enforce_detection=False)
-				text = result['dominant_emotion']
+				text = result[0]['dominant_emotion']
 				cv2.putText(image, text, (x+20, y-60), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
 				cv2.rectangle(image,(x,y-50),(x+w,y+h+10),(0,255,0),2)
 				df1 = music_rec(text)
 
-			# global last_frame1
+			global last_frame1
 			last_frame1 = image.copy()   
 			img = Image.fromarray(last_frame1)
 			img = np.array(img)
@@ -185,9 +126,3 @@ def music_rec(emotion):
 		df = df.iloc[select_random_songs][['track_name','genre','artist_name','mood']]
 
 	return df
-	
-# while True:
-# 	VideoCamera().get_frame()
-# 	key = cv2.waitKey(1) & 0xff
-# 	if key == 27:
-# 		break
